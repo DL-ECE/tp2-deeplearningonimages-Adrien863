@@ -579,7 +579,7 @@ https://github.com/zalandoresearch/fashion-mnist
 ##  First let's look at the data.
 """
 
-if __name__ = "__main__" :
+if __name__ == "__main__" :
 
   fmnist_train = FashionMNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor())
   fmnist_train = DataLoader(fmnist_train, batch_size=32, num_workers=4, pin_memory=True)
@@ -715,7 +715,7 @@ Use some already trained CNN to segment YOUR image.
 In the cell below your can load a image to the notebook and use the given network to have the segmentation mask and plot it.
 """
 
-if __name__ = "__main__" :
+if __name__ == "__main__" :
     
     # TODO HERE: Upload an image to the notebook in the navigation bar on the left
     # `File` `Load File`and load an image to the notebook. 
