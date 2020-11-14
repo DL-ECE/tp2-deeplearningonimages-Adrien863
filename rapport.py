@@ -511,29 +511,61 @@ Now using the numpy implement the convolution operation.
 
 def convolution_forward_numpy(image, kernel):
     # YOUR CODE HERE 
-    convolution_matrix = np.zeros(image.shape,dtype=np.float32)
 
+    RGB = False
     image_pad = np.zeros((image.shape[0]+kernel.shape[0]-1,image.shape[1]+kernel.shape[0]-1))
+    image_pad_red = np.zeros((image.shape[0]+kernel.shape[0]-1,image.shape[1]+kernel.shape[0]-1),dtype=int)
+    image_pad_green = np.zeros((image.shape[0]+kernel.shape[0]-1,image.shape[1]+kernel.shape[0]-1),dtype=int)
+    image_pad_blue = np.zeros((image.shape[0]+kernel.shape[0]-1,image.shape[1]+kernel.shape[0]-1),dtype=int)
+
+    convolution_matrix = np.zeros(image.shape,dtype=int)
+    conv_mat_red = np.zeros((image.shape[0],image.shape[1]),dtype=int)
+    conv_mat_green = np.zeros((image.shape[0],image.shape[1]),dtype=int)
+    conv_mat_blue = np.zeros((image.shape[0],image.shape[1]),dtype=int)
+
+    if len(image.shape) == 3:
+        RGB = True
+
     for i in range(len(image)):
         for j in range(len(image[i])):
-            image_pad[i+1][j+1] = image[i][j] 
+            if RGB:
+                  image_pad_red[i+1][j+1] = image[i][j][0]
+                  image_pad_green[i+1][j+1] = image[i][j][1]
+                  image_pad_blue[i+1][j+1] = image[i][j][2]
+            else:
+                image_pad[i+1][j+1] = image[i][j]
+    
+
 
     for i in range(len(image)):
         for j in range(len(image[i])):
             for k in range(len(kernel)):
                 for l in range(len(kernel[k])):
-                    convolution_matrix[i][j] += image_pad[k+i][l+j]*kernel[k][l]
+                    if RGB:
+                        conv_mat_red[i][j] += image_pad_red[k+i][l+j]*kernel[k][l]
+                        conv_mat_green[i][j] += image_pad_green[k+i][l+j]*kernel[k][l]
+                        conv_mat_blue[i][j] += image_pad_blue[k+i][l+j]*kernel[k][l]
+                    else:
+                        convolution_matrix[i][j] += image_pad[k+i][l+j]*kernel[k][l]
+
+    if RGB:
+        for i in range(len(image)):
+            for j in range(len(image[i])):
+                convolution_matrix[i][j] = [conv_mat_red[i][j],conv_mat_green[i][j],conv_mat_blue[i][j]]
 
     return convolution_matrix
 
-convolution_forward_numpy(I,K_1)
-
 """Test your implementation on the two previous example and compare the results to the result manually computed."""
 
-# assert convolution_forward_numpy(I, K_0) == R_0
-# assert convolution_forward_numpy(I, K_1) == R_1
+#assert convolution_forward_numpy(I, K_0) == R_0
+#assert convolution_forward_numpy(I, K_1) == R_1
 
-"""Display the result image of the convolution"""
+"""Display the result image of the convolution
+
+## 3) Computation using __pytorch__
+
+Now let's use pytorch convolution layer to do the forward pass. Use the documentation available at: https://pytorch.org/docs/stable/nn.html
+"""
 
 # Load image from url, you can use an other image if you want
 image_url = "https://upload.wikimedia.org/wikipedia/commons/4/4f/ECE_Paris_Lyon.jpg"
@@ -545,19 +577,12 @@ def display_image(img):
     plt.imshow(img)
 
 # display the image
-display_image(image)
-
+#display_image(image)
 # Do the convolution operation and display the resulting image
 image = np.array(image)
-print(image.shape)
 # YOUR CODE HERE
-output_image = convolution_forward_numpy(image, K_0) 
+output_image = convolution_forward_numpy(image, K_1) 
 display_image(output_image)
-
-"""## 3) Computation using __pytorch__
-
-Now let's use pytorch convolution layer to do the forward pass. Use the documentation available at: https://pytorch.org/docs/stable/nn.html
-"""
 
 def convolution_forward_torch(image, kernel):
     # YOUR CODE HERE 
