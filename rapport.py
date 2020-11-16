@@ -178,14 +178,14 @@ def normalize_tensor(input_tensor: torch.Tensor) -> torch.Tensor:
 def sigmoid(input_tensor: torch.Tensor) -> torch.Tensor:
     """Apply a sigmoid to the input Tensor"""
     # YOUR CODE HERE
-    return (1/(1+torch.exp(-input_tensor))).numpy()
+    return 1/(1+torch.exp(-input_tensor))
 
 def softmax(input_tensor: torch.Tensor)-> torch.Tensor:
     """Apply a softmax to the input tensor"""
     # YOUR CODE HERE 
     exp = torch.exp(input_tensor)
     sum_exp = torch.sum(exp,axis=1).reshape(-1,1)
-    return (exp/sum_exp).numpy()
+    return exp/sum_exp
 
 def target_to_one_hot(target: torch.Tensor, num_classes=10) -> torch.Tensor:
     """Create the one hot representation of the target""" 
@@ -656,9 +656,8 @@ def display_10_images(dataset):
         plt.title("Label : "+str(target))
 
 fmnist_train = FashionMNIST(os.getcwd(), train=True, download=True)
-print(fmnist_train[0][0])
 fmnist_val = FashionMNIST(os.getcwd(), train=False, download=True)
-display_10_images(fmnist_train)
+display_10_images(fmnist_val)
 
 """What is the shape of each images
 How many images do we have
@@ -709,27 +708,32 @@ class CNNModel(nn.Module):
         self.fc1 = nn.Linear(32*7*7,64)
         self.fc2 = nn.Linear(64,40)
         self.fc3 = nn.Linear(40,10)
+        self.activation = nn.ReLU()
+        
 
     def forward(self, input):
         #print(input.shape)
         x = self.conv1(input)
+        x = self.activation(x)
 
         # YOUR CODE HERE 
         x = self.conv2(x)
-
+        x = self.activation(x)
         x = self.maxpool(x)
-
         x = self.conv3(x)
-
+        x = self.activation(x)
         x = self.conv4(x)
-
+        x = self.activation(x)
         x = self.maxpool(x)
         #print(4,x.shape)
         x = x.reshape(x.size(0),-1)
         #print(5,x.shape)
         x = self.fc1(x)
+        x = self.activation(x)
         x = self.fc2(x)
+        x = self.activation(x)
         x = self.fc3(x)
+
         return x
 
 def train_one_epoch(model, device, data_loader, optimizer):
@@ -774,10 +778,10 @@ if __name__ == "__main__":
     
     # Network Hyperparameters 
     # YOUR CODE HERE 
-    minibatch_size = 24
+    minibatch_size = 1000
     nepoch = 10
     learning_rate = 0.01
-    momentum = 0.85
+    momentum = 0.9
 
 
     model = CNNModel()
@@ -796,16 +800,7 @@ if __name__ == "__main__":
       eval_result = evaluation(model, device, fmnist_val)
       print(f"Result Test dataset {eval_result}")
 
-"""for data,target in fmnist_train:
-    print(data[0][0])
-    data = normalize_tensor(data)
-    print(data[0][0])
-    break
-
-for data,target in fmnist_val:
-    data = normalize_tensor(data)
-
-## Open Analysis
+"""## Open Analysis
 Same as TP 1 please write a short description of your experiment
 
 # BONUS 
