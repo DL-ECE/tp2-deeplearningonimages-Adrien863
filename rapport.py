@@ -352,7 +352,7 @@ class FFNN(nn.Module):
 
 if __name__ == "__main__":
     minibatch_size = 28
-    nepoch = 50
+    nepoch = 5
     learning_rate = 0.1
     ffnn = FFNN(config=[784, 256, 128, 10], device=device, minibatch_size=minibatch_size, learning_rate=learning_rate)
     print(ffnn)
@@ -474,11 +474,11 @@ I = np.array([[252,  49, 113,  11, 137],
                 [209, 216,  48, 135, 232],
                 [229, 53, 107, 106, 222]])
 print(f"I =")
-print(I)
+print(I.shape[0])
 
 K_0 = np.array([[0, 1, 0], [0, 0, 0], [0, 0, 0]])
 #print(f"K_0 =")
-#print(K_0)
+print(K_0)
 
 K_1 = np.array([[1, 1, 1], [0, 5, 0], [-1, -1, -1]])
 print(f"K_1 =")
@@ -555,6 +555,12 @@ def convolution_forward_numpy(image, kernel):
 
     return convolution_matrix
 
+image = np.ones((10, 10))
+kernel = np.array([[0, 2, 0], [0, 1, 0], [0, 1, 0]])
+
+print(np.full((10, 10), 4))
+convolution_forward_numpy(image, kernel)
+
 """Test your implementation on the two previous example and compare the results to the result manually computed."""
 
 #assert convolution_forward_numpy(I, K_0) == R_0
@@ -581,12 +587,39 @@ def display_image(img):
 # Do the convolution operation and display the resulting image
 image = np.array(image)
 # YOUR CODE HERE
-output_image = convolution_forward_numpy(image, K_1) 
-display_image(output_image)
+#output_image = convolution_forward_numpy(image, K_1) 
+#display_image(output_image)
+#output_image = convolution_forward_torch(image, K_1) 
+#display_image(output_image)
 
 def convolution_forward_torch(image, kernel):
-    # YOUR CODE HERE 
-    NotImplemented
+    # YOUR CODE HERE
+    convolution = []
+
+    if len(image.shape) == 3:
+        shape = image.shape
+        image = image.reshape(-1)
+        image_red = torch.Tensor(image[0:len(image):3].reshape(1,1,shape[1],shape[0]))
+        image_green = torch.Tensor(image[1:len(image):3].reshape(1,1,shape[1],shape[0]))
+        image_blue = torch.Tensor(image[2:len(image):3].reshape(1,1,shape[1],shape[0]))
+        kernel = torch.Tensor(kernel.reshape(1,1,kernel.shape[1],kernel.shape[0]))
+        convolution_red = F.conv2d(image_red,kernel,padding=1).numpy().reshape(-1)
+        convolution_green = F.conv2d(image_green,kernel,padding=1).numpy().reshape(-1)
+        convolution_blue = F.conv2d(image_blue,kernel,padding=1).numpy().reshape(-1)
+
+        for i in range(len(convolution_red)):
+            convolution.append(convolution_red[i])
+            convolution.append(convolution_green[i])
+            convolution.append(convolution_blue[i])
+
+        convolution = np.array(convolution).astype(int).reshape(shape[1],shape[0],3)
+
+    else:
+        image = torch.Tensor(image.reshape(1,1,image.shape[1],image.shape[0]))
+        kernel = torch.Tensor(kernel.reshape(1,1,kernel.shape[1],kernel.shape[0]))
+        convolution = F.conv2d(image,kernel,padding=1,groups=1).numpy().astype(int).reshape(image.shape[2],image.shape[3])
+    
+    return convolution
 
 """In pytorch you can also access other layer like convolution2D, pooling layers, for example in the following cell use the __torch.nn.MaxPool2d__ to redduce the image size."""
 
@@ -615,7 +648,17 @@ if __name__ == "__main__" :
 
 def display_10_images(dataset):
     # YOUR CODE HERE 
-    NotImplemented
+    plt.figure(figsize = (dataset[0][0].width, dataset[0][0].height))
+    for i in range(10):
+        image,target = dataset[i]
+        plt.subplot(1,10,i+1)
+        plot_one_tensor(image)
+        plt.title("Label : "+str(target))
+
+fmnist_train = FashionMNIST(os.getcwd(), train=True, download=True)
+print(fmnist_train[0][0])
+fmnist_val = FashionMNIST(os.getcwd(), train=False, download=True)
+display_10_images(fmnist_train)
 
 """What is the shape of each images
 How many images do we have
@@ -623,10 +666,10 @@ What are the different classes
 """
 
 def fashion_mnist_dataset_answer():
-    shape = None  # replace None with the value you found
-    number_of_images_in_train_set = None
-    number_of_images_in_test_set = None
-    number_of_classes = None
+    shape = (28,28)  # replace None with the value you found
+    number_of_images_in_train_set = 60000
+    number_of_images_in_test_set = 10000
+    number_of_classes = 10
     return {'shape': shape, 'nb_in_train_set': number_of_images_in_train_set, 'nb_in_test_set': number_of_images_in_test_set, 'number_of_classes': number_of_classes}
 
 # Plot an image and the target
@@ -658,13 +701,36 @@ class CNNModel(nn.Module):
     def __init__(self, classes=10):
         super().__init__()
         # YOUR CODE HERE 
-        self.conv1 = NotImplemented
+        self.conv1 = nn.Conv2d(1,32,3,padding=1)
+        self.conv2 = nn.Conv2d(32,32,3,padding=1)
+        self.maxpool = nn.MaxPool2d(2,2)
+        self.conv3 = nn.Conv2d(32,50,3,padding=1)
+        self.conv4 = nn.Conv2d(50,32,3,padding=1)
+        self.fc1 = nn.Linear(32*7*7,64)
+        self.fc2 = nn.Linear(64,40)
+        self.fc3 = nn.Linear(40,10)
 
     def forward(self, input):
+        #print(input.shape)
         x = self.conv1(input)
+
         # YOUR CODE HERE 
-        y = NotImplemented
-        return y
+        x = self.conv2(x)
+
+        x = self.maxpool(x)
+
+        x = self.conv3(x)
+
+        x = self.conv4(x)
+
+        x = self.maxpool(x)
+        #print(4,x.shape)
+        x = x.reshape(x.size(0),-1)
+        #print(5,x.shape)
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
+        return x
 
 def train_one_epoch(model, device, data_loader, optimizer):
     train_loss = 0
@@ -675,7 +741,7 @@ def train_one_epoch(model, device, data_loader, optimizer):
         output = model(data)
 
         # YOUR CODE HERE 
-        loss = NotImplemented
+        loss = F.cross_entropy(output, target)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -696,7 +762,7 @@ def evaluation(model, device, data_loader):
         data, target = data.to(device), target.to(device)
         output = model(data)
         # YOUR CODE HERE 
-        eval_loss = NotImplemented
+        eval_loss = F.cross_entropy(output, target).item()
         prediction = output.argmax(dim=1)
         correct += torch.sum(prediction.eq(target)).item()
     result = {'loss': eval_loss / len(data_loader.dataset),
@@ -708,17 +774,17 @@ if __name__ == "__main__":
     
     # Network Hyperparameters 
     # YOUR CODE HERE 
-    minibatch_size = NotImplemented
-    nepoch = NotImplemented
-    learning_rate = NotImplemented
-    momentum = NotImplemented
+    minibatch_size = 24
+    nepoch = 10
+    learning_rate = 0.01
+    momentum = 0.85
 
 
     model = CNNModel()
     model.to(device)
 
     # YOUR CODE HERE 
-    optimizer = NotImplemented
+    optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
 
     # Train for an number of epoch 
     for epoch in range(nepoch):
@@ -730,7 +796,16 @@ if __name__ == "__main__":
       eval_result = evaluation(model, device, fmnist_val)
       print(f"Result Test dataset {eval_result}")
 
-"""## Open Analysis
+"""for data,target in fmnist_train:
+    print(data[0][0])
+    data = normalize_tensor(data)
+    print(data[0][0])
+    break
+
+for data,target in fmnist_val:
+    data = normalize_tensor(data)
+
+## Open Analysis
 Same as TP 1 please write a short description of your experiment
 
 # BONUS 
